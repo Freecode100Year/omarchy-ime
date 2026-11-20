@@ -30,6 +30,20 @@ impl PinyinLexicon for PinyinFixture {
         Vec::new()
     }
 }
+struct DoublePinyinFixture;
+impl PinyinLexicon for DoublePinyinFixture {
+    fn lookup(&self, syllables: &[String]) -> Vec<Lexeme> {
+        if syllables == ["ni"] {
+            vec![Lexeme {
+                text: "你".into(),
+                frequency: 10.0,
+                annotation: None,
+            }]
+        } else {
+            Vec::new()
+        }
+    }
+}
 fn key(c: char) -> KeyEvent {
     KeyEvent {
         key: Key::Character(c),
@@ -120,6 +134,36 @@ fn mixed_engine_commits_literal_input_when_both_dictionaries_miss() {
 }
 
 #[test]
+fn exact_short_code_ranks_before_high_frequency_completions() {
+    let table = Arc::new(wubi::parse_tsv("86\ta\t工\t1\n86\taqi\t区\t9999\n").unwrap());
+    let mut engine = MixedEngine::new(table, Arc::new(PinyinFixture), MixedConfig::default());
+    let result = engine.handle_key(key('a'), &Context::default());
+    assert!(
+        matches!(result, EngineUpdate::Candidates(ref list) if list.items.first().is_some_and(|item| item.text == "工"))
+    );
+}
+
+#[test]
+fn mixed_engine_preserves_unpaired_pinyin_initial_after_selection() {
+    let config = MixedConfig {
+        pinyin_config: pinyin::PinyinConfig {
+            double_pinyin: Some(pinyin::DoublePinyinScheme::Xiaohe),
+            ..pinyin::PinyinConfig::default()
+        },
+        ..MixedConfig::default()
+    };
+    let mut engine = MixedEngine::new(Arc::new(WubiFixture), Arc::new(DoublePinyinFixture), config);
+    let context = Context::default();
+    for c in "nih".chars() {
+        engine.handle_key(key(c), &context);
+    }
+    assert!(matches!(engine.select_candidate(0), EngineUpdate::Commit(ref text) if text == "你"));
+    assert!(engine.is_composing());
+    let update = engine.handle_key(key('a'), &context);
+    assert!(matches!(update, EngineUpdate::Candidates(ref list) if list.preedit == "ha"));
+}
+
+#[test]
 fn mixed_engine_commits_buffer_before_overflow_character() {
     let config = MixedConfig {
         max_input_len: 1,
@@ -130,5 +174,23 @@ fn mixed_engine_commits_buffer_before_overflow_character() {
     engine.handle_key(key('n'), &context);
     assert!(
         matches!(engine.handle_key(key('i'), &context), EngineUpdate::Commit(ref text) if text=="ni")
+    );
+}
+
+#[test]
+fn mixed_engine_accepts_natural_code_pairs() {
+    let config = MixedConfig {
+        pinyin_config: pinyin::PinyinConfig {
+            double_pinyin: Some(pinyin::DoublePinyinScheme::NaturalCode),
+            ..pinyin::PinyinConfig::default()
+        },
+        ..MixedConfig::default()
+    };
+    let mut engine = MixedEngine::new(Arc::new(WubiFixture), Arc::new(PinyinFixture), config);
+    let context = Context::default();
+    engine.handle_key(key('b'), &context);
+    let result = engine.handle_key(key('y'), &context);
+    assert!(
+        matches!(result, EngineUpdate::Candidates(ref candidates) if candidates.preedit == "by")
     );
 }

@@ -12,6 +12,11 @@ fn defaults_are_local_and_have_bounded_candidate_count() {
     assert!(cfg
         .dictionary_path
         .starts_with("~/.local/share/omarchy-ime"));
+    assert_eq!(cfg.wubi_version, "86");
+    assert_eq!(cfg.double_pinyin, "full");
+    assert!(cfg.wubi_dictionary_path.ends_with("/wubi.tsv"));
+    assert!(cfg.user_data_path.ends_with("user.sqlite3"));
+    assert!(cfg.macros_path.ends_with("macros.toml"));
 }
 
 #[test]
@@ -172,4 +177,21 @@ fn shipped_dictionary_covers_basic_single_character_syllables() {
         }
     }
     assert_eq!(corrected.first().map(String::as_str), Some("双手"));
+}
+
+#[test]
+fn shipped_wubi_dictionary_loads_and_supports_reverse_lookup() {
+    let wubi = wubi::parse_tsv(include_str!("../../../data/wubi.tsv")).unwrap();
+    use wubi::{WubiLexicon, WubiVersion};
+    assert!(wubi
+        .lookup(WubiVersion::V86, "khk")
+        .iter()
+        .any(|x| x.text == "中"));
+    assert!(wubi
+        .reverse_lookup(WubiVersion::V86, '中')
+        .contains(&"khk".to_owned()));
+    assert!(wubi
+        .lookup(WubiVersion::V98, "a")
+        .iter()
+        .any(|x| x.text == "工"));
 }

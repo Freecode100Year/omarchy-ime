@@ -1,4 +1,4 @@
-use crate::{cost::weighted_word_osa, SyllableDag};
+use crate::{cost::weighted_word_osa, expand_double_pinyin, DoublePinyinScheme, SyllableDag};
 use ime_core::{
     Candidate, CandidateList, CandidateSource, Context, EngineUpdate, InputEngine, Key, KeyEvent,
 };
@@ -35,6 +35,7 @@ pub struct PinyinConfig {
     pub beam_width: usize,
     pub page_size: usize,
     pub max_input_len: usize,
+    pub double_pinyin: Option<DoublePinyinScheme>,
 }
 impl Default for PinyinConfig {
     fn default() -> Self {
@@ -45,6 +46,7 @@ impl Default for PinyinConfig {
             beam_width: 4,
             page_size: 9,
             max_input_len: 64,
+            double_pinyin: None,
         }
     }
 }
@@ -388,7 +390,18 @@ impl PinyinEngine {
             self.candidates = CandidateList::default();
             return EngineUpdate::Noop;
         }
-        let dag = SyllableDag::from_input(&self.buffer, &self.config);
+        let input = match self.config.double_pinyin {
+            Some(scheme) => match expand_double_pinyin(&self.buffer, scheme) {
+                Some(input) => input,
+                None => {
+                    self.candidates =
+                        CandidateList::new(self.buffer.clone(), Vec::new(), self.config.page_size);
+                    return EngineUpdate::Candidates(self.candidates.clone());
+                }
+            },
+            None => self.buffer.clone(),
+        };
+        let dag = SyllableDag::from_input(&input, &self.config);
         let items = decode_with_limits(
             &dag,
             self.lexicon.as_ref(),
@@ -440,6 +453,12 @@ impl InputEngine for PinyinEngine {
                     && !event.modifiers.alt
                     && !event.modifiers.super_key =>
             {
+                if self.config.double_pinyin.is_some()
+                    && self.buffer.len() % 2 == 1
+                    && self.candidates.items.is_empty()
+                {
+                    return EngineUpdate::PassThrough;
+                }
                 self.select_candidate(0)
             }
             Key::Escape
@@ -458,7 +477,17 @@ impl InputEngine for PinyinEngine {
     fn select_candidate(&mut self, index: usize) -> EngineUpdate {
         if let Some(candidate) = self.candidates.select(index) {
             let text = candidate.text.clone();
-            self.reset();
+            let pending = if self.config.double_pinyin.is_some() && self.buffer.len() % 2 == 1 {
+                self.buffer
+                    .chars()
+                    .last()
+                    .map(|ch| ch.to_string())
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            };
+            self.buffer = pending;
+            self.candidates = CandidateList::default();
             EngineUpdate::Commit(text)
         } else {
             EngineUpdate::Noop
@@ -467,5 +496,25 @@ impl InputEngine for PinyinEngine {
     fn reset(&mut self) {
         self.buffer.clear();
         self.candidates = CandidateList::default();
+    }
+    fn is_composing(&self) -> bool {
+        !self.buffer.is_empty()
+    }
+    fn preedit(&self) -> &str {
+        &self.buffer
+    }
+    fn flush(&mut self) -> EngineUpdate {
+        if !self.candidates.items.is_empty() {
+            return self.select_candidate(0);
+        }
+        if !self.buffer.is_empty() {
+            let text = std::mem::take(&mut self.buffer);
+            self.candidates = CandidateList::default();
+            return EngineUpdate::Commit(text);
+        }
+        EngineUpdate::PassThrough
+    }
+    fn wants_key(&self, _key: Key) -> bool {
+        false
     }
 }

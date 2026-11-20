@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/ime-core", "crates/pinyin", "crates/wubi", "crates/handwriting", "crates/lexicon", "crates/omarchy-ime"]
+members = ["crates/ime-core", "crates/pinyin", "crates/wubi", "crates/handwriting", "crates/lexicon", "crates/ime-macros", "crates/user-data", "crates/omarchy-ime"]
 
 [workspace.package]
 edition = "2021"

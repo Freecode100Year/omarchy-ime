@@ -1,4 +1,5 @@
 /target/
+/build/
 /.superpowers/
 *.fst
 *.sqlite3*

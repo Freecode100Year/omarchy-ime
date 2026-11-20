@@ -1,0 +1,15 @@
+# Local examples. Remove the leading # to enable a macro.
+[[macro]]
+trigger = ";;date"
+text = "${date}"
+position = 0
+
+[[macro]]
+trigger = ";;time"
+text = "${time}"
+position = 0
+
+[[macro]]
+trigger = ";;sig"
+text = "此致\n敬礼"
+position = 0

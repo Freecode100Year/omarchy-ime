@@ -9,6 +9,24 @@ fn main() -> ExitCode {
             println!("omarchy-ime {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
         }
+        Some("--learn") => {
+            let code = args.next().unwrap_or_default();
+            let text = args.next().unwrap_or_default();
+            if code.is_empty() || text.is_empty() {
+                eprintln!("usage: omarchy-ime --learn <pinyin> <Chinese text>");
+                return ExitCode::FAILURE;
+            }
+            match omarchy_ime::add_learned_phrase(&code, &text) {
+                Ok(()) => {
+                    println!("learned phrase saved locally");
+                    ExitCode::SUCCESS
+                }
+                Err(error) => {
+                    eprintln!("learning database: {error}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Some("--check") | Some("check") => {
             let path = args.next();
             if let Some(path) = path {
@@ -116,7 +134,7 @@ fn main() -> ExitCode {
         }
         _ => {
             let cfg = AppConfig::default();
-            println!("omarchy-ime: local Rust engine runtime\nUsage: omarchy-ime --check [DICT.tsv] | --demo [pinyin] | --bench [pinyin] [iterations] | --version\nDefault data: {}", cfg.dictionary_path);
+            println!("omarchy-ime: local Rust engine runtime\nUsage: omarchy-ime --check [DICT.tsv] | --learn <pinyin> <text> | --demo [pinyin] | --bench [pinyin] [iterations] | --version\nDefault data: {}", cfg.dictionary_path);
             ExitCode::SUCCESS
         }
     }

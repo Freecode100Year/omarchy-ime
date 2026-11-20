@@ -3,3 +3,6 @@ page_size = 9
 dictionary_path = "~/.local/share/omarchy-ime/pinyin.tsv"
 user_data_path = "~/.local/share/omarchy-ime/user.sqlite3"
 fuzzy_typing = true
+double_pinyin = "full" # full, xiaohe, or natural-code
+wubi_dictionary_path = "~/.local/share/omarchy-ime/wubi.tsv"
+wubi_version = "86"

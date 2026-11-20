@@ -11,3 +11,4 @@ set_target_properties(omarchy-ime-fcitx5 PROPERTIES PREFIX "" INSTALL_RPATH "$OR
 install(TARGETS omarchy-ime-fcitx5 LIBRARY DESTINATION lib/fcitx5)
 install(FILES data/omarchy-ime-addon.conf DESTINATION share/fcitx5/addon RENAME omarchy-ime.conf)
 install(FILES data/omarchy-ime.conf DESTINATION share/fcitx5/inputmethod RENAME omarchy-ime.conf)
+install(FILES data/omarchy-ime-wubi.conf DESTINATION share/fcitx5/inputmethod)
