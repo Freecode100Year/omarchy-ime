@@ -51,4 +51,20 @@ pub trait InputEngine {
     fn handle_key(&mut self, key: KeyEvent, ctx: &Context) -> EngineUpdate;
     fn select_candidate(&mut self, index: usize) -> EngineUpdate;
     fn reset(&mut self);
+    fn is_composing(&self) -> bool {
+        false
+    }
+    fn preedit(&self) -> &str {
+        ""
+    }
+    fn flush(&mut self) -> EngineUpdate {
+        if self.is_composing() {
+            self.select_candidate(0)
+        } else {
+            EngineUpdate::PassThrough
+        }
+    }
+    fn wants_key(&self, _key: Key) -> bool {
+        false
+    }
 }
