@@ -157,3 +157,13 @@ fn keeps_case_when_mixing_pinyin_with_english() {
     let dag = SyllableDag::from_input("niSQL", &PinyinConfig::default());
     assert!(decode(&dag, &lex, 32).iter().any(|c| c.text == "你SQL"));
 }
+
+#[test]
+fn public_decoder_handles_ascii_composition_followed_by_utf8_text() {
+    let lex = Fixture(vec![(vec!["ni".into()], lexeme("你"))]);
+    let dag = SyllableDag::from_input("ni你", &PinyinConfig::default());
+    let candidates = decode(&dag, &lex, 8);
+    assert!(candidates
+        .iter()
+        .any(|candidate| candidate.text.contains("你")));
+}

@@ -1,5 +1,8 @@
 /target/
+/build/
 /.superpowers/
 *.fst
 *.sqlite3*
 
+
+__pycache__/

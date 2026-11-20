@@ -1,8 +1,8 @@
 //! FST backed immutable lookup adapters. The FST stores key -> row index;
 //! candidate payloads stay in a compact side table.
-use fst::{Map, MapBuilder};
+use fst::{Automaton, IntoStreamer, Map, MapBuilder, Streamer};
 use pinyin::{Lexeme, PinyinLexicon};
-use std::io;
+use std::{borrow::Cow, io};
 use wubi::{WubiLexicon, WubiVersion};
 
 #[derive(Debug)]
@@ -55,6 +55,17 @@ impl FstPinyinLexicon {
     }
 }
 impl PinyinLexicon for FstPinyinLexicon {
+    fn has_prefix(&self, syllables: &[String]) -> bool {
+        if syllables.is_empty() {
+            return false;
+        }
+        let key = format!("{}\u{1f}", encode_syllables(syllables));
+        self.map
+            .search(fst::automaton::Str::new(&key).starts_with())
+            .into_stream()
+            .next()
+            .is_some()
+    }
     fn lookup(&self, syllables: &[String]) -> Vec<Lexeme> {
         let key = encode_syllables(syllables);
         self.map
@@ -62,6 +73,14 @@ impl PinyinLexicon for FstPinyinLexicon {
             .and_then(|i| self.rows.get(i as usize))
             .map(|(_, v)| v.clone())
             .unwrap_or_default()
+    }
+    fn lookup_cow<'a>(&'a self, syllables: &[String]) -> Cow<'a, [Lexeme]> {
+        let key = encode_syllables(syllables);
+        self.map
+            .get(key.as_bytes())
+            .and_then(|i| self.rows.get(i as usize))
+            .map(|(_, rows)| Cow::Borrowed(rows.as_slice()))
+            .unwrap_or(Cow::Borrowed(&[]))
     }
 }
 

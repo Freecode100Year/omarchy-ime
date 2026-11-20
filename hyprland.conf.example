@@ -1,0 +1,8 @@
+# Fcitx5 has a Wayland frontend by default; do not force toolkit modules globally unless needed.
+# Add this to ~/.config/hypr/hyprland.conf and restart the session:
+exec-once = fcitx5 -d
+
+# For Xwayland applications only, add: env = XMODIFIERS,@im=fcitx
+# GTK/Qt Wayland clients can use the native text-input protocol. If a specific app fails,
+# install fcitx5-gtk/fcitx5-qt and set its toolkit module only for that app.
+# Ctrl+Space toggles Fcitx input mode.

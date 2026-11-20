@@ -29,16 +29,13 @@ pub fn match_templates(
                 .map(|(a, b)| (a - b).abs())
                 .sum::<f32>()
                 / 64.0;
-            let dir = query
-                .directions
-                .iter()
-                .zip(t.features.directions.iter())
-                .map(|(a, b)| (a - b).abs())
-                .sum::<f32>()
-                / 2.0;
+            let dir = direction_distance(&query.directions, &t.features.directions);
             let stroke = (query.stroke_count.abs_diff(t.features.stroke_count) as f32)
                 / (query.stroke_count.max(t.features.stroke_count).max(1) as f32);
-            let trajectory = dtw(&query.trajectory, &t.features.trajectory);
+            let mut reversed = t.features.trajectory.clone();
+            reversed.reverse();
+            let trajectory = dtw(&query.trajectory, &t.features.trajectory)
+                .min(dtw(&query.trajectory, &reversed));
             let distance = grid * 0.35 + dir * 0.20 + stroke * 0.10 + trajectory * 0.35;
             let score = (1.0 - distance).max(0.0) + t.frequency.max(0.0).ln_1p() * 0.001;
             HandwritingMatch {
@@ -57,6 +54,20 @@ pub fn match_templates(
     });
     out.truncate(limit);
     out
+}
+
+fn direction_distance(a: &[f32; 8], b: &[f32; 8]) -> f32 {
+    let direct = a
+        .iter()
+        .zip(b.iter())
+        .map(|(x, y)| (x - y).abs())
+        .sum::<f32>();
+    let reversed = a
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (x - b[(i + 4) % 8]).abs())
+        .sum::<f32>();
+    direct.min(reversed) / 2.0
 }
 
 fn dtw(a: &[[f32; 3]], b: &[[f32; 3]]) -> f32 {
