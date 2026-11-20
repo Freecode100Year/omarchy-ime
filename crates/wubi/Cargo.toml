@@ -1,0 +1,10 @@
+[package]
+name = "wubi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ime-core.workspace = true
+pinyin = { path = "../pinyin" }
+

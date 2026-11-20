@@ -1,0 +1,5 @@
+/target/
+/.superpowers/
+*.fst
+*.sqlite3*
+
