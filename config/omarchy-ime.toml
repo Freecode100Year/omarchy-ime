@@ -1,0 +1,5 @@
+mode = "pinyin"
+page_size = 9
+dictionary_path = "~/.local/share/omarchy-ime/pinyin.tsv"
+user_data_path = "~/.local/share/omarchy-ime/user.sqlite3"
+fuzzy_typing = true

@@ -47,3 +47,20 @@ fn character_reverse_lookup_does_not_return_phrase_codes() {
         vec!["efgh".to_owned()]
     );
 }
+
+#[test]
+fn pinyin_fst_detects_continuable_syllable_prefixes() {
+    use pinyin::PinyinLexicon;
+    let lexeme = |text: &str, frequency| Lexeme {
+        text: text.into(),
+        frequency,
+        annotation: None,
+    };
+    let lex = FstPinyinLexicon::from_sorted(vec![
+        ("shou".into(), lexeme("收", 10.0)),
+        ("shou\u{1f}dao".into(), lexeme("收到", 100.0)),
+    ])
+    .unwrap();
+    assert!(lex.has_prefix(&["shou".into()]));
+    assert!(!lex.has_prefix(&["dao".into()]));
+}

@@ -1,0 +1,19 @@
+[package]
+name = "omarchy-ime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "omarchy-ime"
+path = "src/main.rs"
+
+[dependencies]
+ime-core.workspace = true
+pinyin.workspace = true
+lexicon = { path = "../lexicon" }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

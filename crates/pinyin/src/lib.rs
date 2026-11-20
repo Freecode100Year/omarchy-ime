@@ -4,4 +4,4 @@ mod dag;
 mod decoder;
 
 pub use dag::{SyllableDag, SyllableEdge};
-pub use decoder::{decode, Lexeme, PinyinConfig, PinyinEngine, PinyinLexicon};
+pub use decoder::{decode, decode_with_limits, Lexeme, PinyinConfig, PinyinEngine, PinyinLexicon};

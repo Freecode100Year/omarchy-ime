@@ -1,0 +1,5 @@
+# Third-party dictionary data
+
+`rime-ice-pinyin.tsv` combines a transformed, frequency-trimmed subset of `cn_dicts/base.dict.yaml` with the `cn_dicts/8105.dict.yaml` single-character table from [iDvel/rime-ice](https://github.com/iDvel/rime-ice), pinned at commit `927e1cf1d3eeb9bf4be85e3f684dba4dd485b6f6` (version 2026-11-01). The transformation was generated on 2026-11-20 from both source files. Phrase entries are limited to at most four Han characters and source weight >= 5000; single-character entries come from the 8105 table. Up to ten candidates per pinyin key are retained. Rime Ice credits source contributions from THUOCL, Huayu, Modern Chinese Word List, and Tencent; these attributions are retained here. The data is distributed under GNU GPL version 3 only. The source files are preserved in `source-base.dict.yaml` and `source-8105.dict.yaml`. The exact license is in `licenses/GPL-3.0-rime-ice.txt`.
+
+The Rust source code remains MIT OR Apache-2.0. The dictionary is separate data and is not linked into the engine as code. See the source repository's `cn_dicts/base.dict.yaml` and `LICENSE` for source and licensing details.
