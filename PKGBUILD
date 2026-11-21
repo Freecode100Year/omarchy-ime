@@ -5,7 +5,7 @@ pkgdesc='Offline Rust Chinese input engine for Fcitx5 on Omarchy/Hyprland'
 arch=('x86_64' 'aarch64')
 url='https://github.com/Freecode100Year/omarchy-ime'
 license=('MIT' 'Apache-2.0' 'GPL-3.0-only' 'LGPL-3.0-only')
-depends=('fcitx5' 'python')
+depends=('fcitx5' 'python' 'jq')
 optdepends=('fcitx5-gtk: GTK toolkit integration' 'fcitx5-qt: Qt toolkit integration' 'fcitx5-configtool: configure input methods and UI')
 makedepends=('git' 'rust' 'cmake' 'gcc' 'fcitx5')
 # makepkg's default LTO turns the C code that rusqlite bundles (SQLite) into GCC
@@ -27,6 +27,7 @@ package() {
   DESTDIR="$pkgdir" cmake --install build/fcitx5 --prefix /usr
   install -Dm755 target/release/omarchy-ime "$pkgdir/usr/bin/omarchy-ime"
   install -Dm755 theme-sync.py "$pkgdir/usr/bin/omarchy-ime-theme-sync"
+  install -Dm755 omarchy-ime-enable "$pkgdir/usr/bin/omarchy-ime-enable"
   install -Dm644 data/rime-ice-pinyin.tsv "$pkgdir/usr/share/omarchy-ime/pinyin.tsv"
   install -Dm644 data/wubi.tsv "$pkgdir/usr/share/omarchy-ime/wubi.tsv"
   install -Dm644 data/source-8105.dict.yaml "$pkgdir/usr/share/doc/omarchy-ime/source-8105.dict.yaml"

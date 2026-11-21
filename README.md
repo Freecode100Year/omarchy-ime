@@ -12,9 +12,19 @@ curl -fsSL https://raw.githubusercontent.com/Freecode100Year/omarchy-ime/main/in
 
 The installer fetches the source tree, installs `git` and `base-devel` if needed, then lets `makepkg` install the declared build dependencies and build the package. It uses `sudo` for package-manager operations. To install from an existing checkout instead, run `./install.sh` from the repository directory. If pacman reports a slow or unavailable mirror, update `/etc/pacman.d/mirrorlist` to use a current HTTPS mirror and rerun the installer.
 
+### 在 Omarchy 上使用 · On Omarchy
+
+安装程序最后会自动运行 `omarchy-ime-enable`：重启 Omarchy 管理的 Fcitx5（`omarchy-fcitx5.service`），让它加载 Omarchy IME，再把「Omarchy 拼音」加进当前输入法列表。然后按 `Super + I` 切换输入法（Omarchy 的切换键；Omarchy 把 `Ctrl + Space` 留给终端，不用它切换输入法）。
+
+- Omarchy 菜单里的「Input Methods」只列出 Omarchy 自带的引擎（Mozc、Hangul、Pinyin 等），所以 Omarchy 拼音不会出现在那里，这是正常的
+- 加上五笔拼音混输：`omarchy-ime-enable --wubi`
+- 检查：`omarchy-ime-enable --status`（Fcitx5 是否加载了它、是否在输入法列表里）
+
+The installer runs `omarchy-ime-enable`, which restarts Omarchy's supervised Fcitx5 so it loads the engine and appends “Omarchy 拼音” to the current input group (the same D-Bus calls Omarchy's picker uses). Switch with `Super + I`. Omarchy's own Input Methods menu lists only its built-in catalog, so the engine does not appear there.
+
 `fcitx5-gtk`, `fcitx5-qt`, and `fcitx5-configtool` are optional integrations/configuration tools and can be installed with pacman when needed.
 
-Add **Omarchy 拼音** in Fcitx5 configuration, then add the following to `~/.config/hypr/hyprland.conf` and log out/in:
+On other Hyprland setups, add **Omarchy 拼音** in Fcitx5 configuration (or run `omarchy-ime-enable`), then add the following to `~/.config/hypr/hyprland.conf` and log out/in:
 
 ```ini
 exec-once = fcitx5 -d

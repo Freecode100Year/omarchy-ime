@@ -1,0 +1,95 @@
+#!/bin/bash
+# omarchy-ime-enable — make the running Fcitx5 load Omarchy IME and add it to the
+# current input-method group, the same way Omarchy's own Input Methods picker does
+# (Fcitx Controller1: InputMethodGroupInfo / SetInputMethodGroupInfo / Save).
+#
+#   omarchy-ime-enable            add "Omarchy 拼音"
+#   omarchy-ime-enable --wubi     also add "Omarchy 五笔拼音混输"
+#   omarchy-ime-enable --status   show whether Fcitx sees it and whether it is in the group
+#
+# Omarchy's picker only lists its own catalog (Mozc, Hangul, Pinyin, ...), so a
+# third-party engine never shows up there; it has to be added to the group directly.
+set -uo pipefail
+
+CTL=(busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1)
+CTLJ=(busctl --user --json=short call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1)
+WANT=(omarchy-ime)
+[[ ${1:-} == --wubi ]] && WANT+=(omarchy-ime-wubi)
+
+say() { printf '%s\n' "$*"; }
+die() { printf 'omarchy-ime-enable: %s\n' "$*" >&2; exit 1; }
+
+available() { "${CTLJ[@]}" AvailableInputMethods 2>/dev/null | jq -r '.data[0][][0]' 2>/dev/null; }
+
+# Whether Fcitx lists the engine (no `| grep -q`: under pipefail its early exit can fail the pipe).
+has_engine() { local all; all="$(available)"; [[ $'\n'$all$'\n' == *$'\n'omarchy-ime$'\n'* ]]; }
+
+group_info() {
+  local group
+  group="$(fcitx5-remote -q 2>/dev/null)" || return 1
+  [[ -n $group ]] || return 1
+  printf '%s\n' "$group"
+  "${CTLJ[@]}" InputMethodGroupInfo s "$group" 2>/dev/null | jq -c '.data'
+}
+
+status() {
+  if ! busctl --user status org.fcitx.Fcitx5 >/dev/null 2>&1; then say "Fcitx5 未运行 · not running"; return 1; fi
+  if has_engine; then say "✓ Fcitx5 已加载 Omarchy IME · engine loaded"; else say "✗ Fcitx5 没有加载 Omarchy IME · engine NOT loaded"; fi
+  local info
+  info="$(group_info)" || { say "✗ 读不到输入法分组 · cannot read the group"; return 1; }
+  local items
+  items="$(sed -n 2p <<<"$info" | jq -r '.[1][][0]')"
+  say "当前分组 group \"$(head -1 <<<"$info")\": $(tr '\n' ' ' <<<"$items")"
+  [[ $'\n'$items$'\n' == *$'\n'omarchy-ime$'\n'* ]] && say "✓ 已在输入法列表里 · in the group" || say "✗ 不在输入法列表里 · not in the group"
+}
+
+restart_fcitx() {
+  if systemctl --user is-enabled -q omarchy-fcitx5.service 2>/dev/null || systemctl --user is-active -q omarchy-fcitx5.service 2>/dev/null; then
+    # Omarchy supervises Fcitx; restart the unit rather than starting a second daemon.
+    systemctl --user restart omarchy-fcitx5.service
+  else
+    pkill -x fcitx5 2>/dev/null
+    sleep 0.5
+    setsid fcitx5 -d --replace >/dev/null 2>&1
+  fi
+}
+
+case ${1:-} in
+  --status) status; exit $? ;;
+  -h | --help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+esac
+
+command -v busctl >/dev/null || die "busctl (systemd) is required"
+command -v jq >/dev/null || die "jq is required: sudo pacman -S jq"
+
+# 1. A running Fcitx only discovers new addons when it starts.
+if ! has_engine; then
+  say "重启 Fcitx5，让它加载 Omarchy IME · restarting Fcitx5 to load Omarchy IME"
+  restart_fcitx
+  for _ in $(seq 100); do
+    has_engine && break
+    sleep 0.1
+  done
+  has_engine ||
+    die "Fcitx5 没有加载 Omarchy IME。请运行 omarchy-ime-enable --status 并把结果发给开发者 · Fcitx5 did not load the engine"
+fi
+
+# 2. Add it to the current group, after what is there (keyboard first, like Omarchy).
+info="$(group_info)" || die "读不到 Fcitx5 的输入法分组 · cannot read the current input group"
+group="$(head -1 <<<"$info")"
+data="$(sed -n 2p <<<"$info")"
+layout="$(jq -r '.[0]' <<<"$data")"
+mapfile -t names < <(jq -r '.[1][][0]' <<<"$data")
+mapfile -t layouts < <(jq -r '.[1][][1]' <<<"$data")
+changed=0
+for w in "${WANT[@]}"; do
+  if [[ ! " ${names[*]} " == *" $w "* ]]; then names+=("$w"); layouts+=(""); changed=1; fi
+done
+if ((changed)); then
+  args=("$group" "$layout" "${#names[@]}")
+  for i in "${!names[@]}"; do args+=("${names[$i]}" "${layouts[$i]}"); done
+  "${CTL[@]}" SetInputMethodGroupInfo 'ssa(ss)' "${args[@]}" >/dev/null || die "无法修改输入法分组 · could not update the group"
+  "${CTL[@]}" Save >/dev/null || true
+fi
+say "✓ 已启用 Omarchy 拼音。按 Super + I 切换输入法（Omarchy 的切换键）。"
+say "✓ Omarchy Pinyin is enabled. Press Super + I to switch input methods on Omarchy."

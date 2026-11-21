@@ -56,9 +56,17 @@ config_file="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy-ime/config.toml"
 if [[ ! -e "$config_file" ]]; then install -Dm644 config/omarchy-ime.toml "$config_file"; fi
 macro_file="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy-ime/macros.toml"
 if [[ ! -e "$macro_file" ]]; then install -Dm644 config/macros.toml "$macro_file"; fi
+# Make the running Fcitx5 load the new engine and add it to the input-method list.
+# Omarchy's own Input Methods picker only lists its built-in catalog, so this is
+# what makes "Omarchy 拼音" show up at all.
+if [[ -n ${WAYLAND_DISPLAY:-} ]] && command -v omarchy-ime-enable >/dev/null; then
+  omarchy-ime-enable || echo 'Run omarchy-ime-enable after logging in to the desktop to add Omarchy 拼音.' >&2
+fi
 cat <<'MSG'
-Installed Omarchy IME. Add “Omarchy 拼音” and/or “Omarchy 五笔拼音混输” to your Fcitx5 input methods, then restart Fcitx5:
-  fcitx5-remote -r
+Installed Omarchy IME. “Omarchy 拼音” has been added to your input methods.
+  On Omarchy press Super + I to switch to it. 在 Omarchy 上按 Super + I 切换输入法。
+  Also add the Wubi mix: omarchy-ime-enable --wubi
+  Not showing? Check with: omarchy-ime-enable --status
 Input and learning data stay local. The package includes a frequency-trimmed offline GPL-3.0 dictionary.
 Optional personal dictionaries at ~/.local/share/omarchy-ime/pinyin.tsv and wubi.tsv take priority.
 MSG

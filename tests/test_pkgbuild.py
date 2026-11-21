@@ -16,5 +16,19 @@ class PkgbuildTest(unittest.TestCase):
         self.assertIn("!lto", out)
 
 
+
+
+class SonameTest(unittest.TestCase):
+    def test_cdylib_declares_soname(self):
+        # Without a SONAME the Fcitx5 front end records the library's absolute build
+        # path, which install.sh deletes, so the addon cannot load after install.
+        build_rs = (ROOT / "crates/omarchy-ime/build.rs").read_text()
+        self.assertIn("-Wl,-soname,libomarchy_ime.so", build_rs)
+        lib = ROOT / "target/release/libomarchy_ime.so"
+        if lib.exists():
+            dynamic = subprocess.run(["readelf", "-d", str(lib)], capture_output=True, text=True).stdout
+            self.assertIn("Library soname: [libomarchy_ime.so]", dynamic)
+
+
 if __name__ == "__main__":
     unittest.main()
