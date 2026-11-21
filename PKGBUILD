@@ -8,6 +8,10 @@ license=('MIT' 'Apache-2.0' 'GPL-3.0-only' 'LGPL-3.0-only')
 depends=('fcitx5' 'python')
 optdepends=('fcitx5-gtk: GTK toolkit integration' 'fcitx5-qt: Qt toolkit integration' 'fcitx5-configtool: configure input methods and UI')
 makedepends=('git' 'rust' 'cmake' 'gcc' 'fcitx5')
+# makepkg's default LTO turns the C code that rusqlite bundles (SQLite) into GCC
+# LTO bytecode, which the Rust link step cannot read: linking the omarchy-ime
+# binary fails with "undefined symbol: sqlite3_...". Build without LTO.
+options=('!lto')
 source=()
 sha256sums=()
 pkgver() { cd "$startdir"; printf '0.1.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"; }
