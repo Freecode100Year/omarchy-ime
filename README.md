@@ -4,12 +4,15 @@ A local Rust Chinese input engine with an optional Fcitx5 adapter for Omarchy/Hy
 
 ## Install on Omarchy / Arch
 
-Install the Fcitx5 development package and build tools, clone this repository, then run:
+Run the installer as your regular user from a terminal:
 
 ```sh
-sudo pacman -S --needed fcitx5 fcitx5-gtk fcitx5-qt fcitx5-configtool base-devel cmake rust
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/Freecode100Year/omarchy-ime/main/install.sh | bash
 ```
+
+The installer fetches the source tree, installs `git` and `base-devel` if needed, then lets `makepkg` install the declared build dependencies and build the package. It uses `sudo` for package-manager operations. To install from an existing checkout instead, run `./install.sh` from the repository directory. If pacman reports a slow or unavailable mirror, update `/etc/pacman.d/mirrorlist` to use a current HTTPS mirror and rerun the installer.
+
+`fcitx5-gtk`, `fcitx5-qt`, and `fcitx5-configtool` are optional integrations/configuration tools and can be installed with pacman when needed.
 
 Add **Omarchy 拼音** in Fcitx5 configuration, then add the following to `~/.config/hypr/hyprland.conf` and log out/in:
 
