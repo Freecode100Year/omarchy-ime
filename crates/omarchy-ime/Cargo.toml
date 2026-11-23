@@ -17,7 +17,7 @@ pinyin.workspace = true
 wubi = { path = "../wubi" }
 ime-macros = { path = "../ime-macros" }
 ime-user-data = { path = "../user-data" }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = "0.32"
 lexicon = { path = "../lexicon" }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"

@@ -34,7 +34,11 @@ fi
 
 bootstrap_root=''
 if [[ ! -f "$source_root/PKGBUILD" ]]; then
-  bootstrap_root="$(mktemp -d "${TMPDIR:-/tmp}/omarchy-ime.XXXXXX")"
+  # Build on disk, not in /tmp: /tmp is RAM on Omarchy, and the Rust build needs
+  # several hundred MB, which small machines can't spare.
+  build_parent="${XDG_CACHE_HOME:-$HOME/.cache}"
+  mkdir -p "$build_parent"
+  bootstrap_root="$(mktemp -d "$build_parent/omarchy-ime-build.XXXXXX")"
   trap 'if [[ -n "$bootstrap_root" ]]; then rm -rf -- "$bootstrap_root"; fi' EXIT
   source_root="$bootstrap_root/omarchy-ime"
   echo 'Fetching Omarchy IME source from GitHub...'
@@ -48,6 +52,7 @@ if [[ -e "$hook" ]] && ! cmp -s hooks/50-omarchy-ime-theme "$hook"; then
 fi
 if ! makepkg --syncdeps --install --noconfirm; then
   echo 'Omarchy IME build or package installation failed. Review the pacman/build error above. If pacman reports a slow mirror, update /etc/pacman.d/mirrorlist to use a current HTTPS mirror, run sudo pacman -Syu, then rerun this installer.' >&2
+  echo "If the compiler crashed or was killed, the machine probably ran out of memory (free now: $(awk '/^MemAvailable:/ {printf "%d MB", $2/1024}' /proc/meminfo)). Close other programs and rerun; the build needs about 1.5 GB." >&2
   exit 1
 fi
 install -Dm755 hooks/50-omarchy-ime-theme "$hook"

@@ -5,19 +5,31 @@ pkgdesc='Offline Rust Chinese input engine for Fcitx5 on Omarchy/Hyprland'
 arch=('x86_64' 'aarch64')
 url='https://github.com/Freecode100Year/omarchy-ime'
 license=('MIT' 'Apache-2.0' 'GPL-3.0-only' 'LGPL-3.0-only')
-depends=('fcitx5' 'python' 'jq')
+depends=('fcitx5' 'python' 'jq' 'sqlite')
 optdepends=('fcitx5-gtk: GTK toolkit integration' 'fcitx5-qt: Qt toolkit integration' 'fcitx5-configtool: configure input methods and UI')
-makedepends=('git' 'rust' 'cmake' 'gcc' 'fcitx5')
-# makepkg's default LTO turns the C code that rusqlite bundles (SQLite) into GCC
-# LTO bytecode, which the Rust link step cannot read: linking the omarchy-ime
-# binary fails with "undefined symbol: sqlite3_...". Build without LTO.
+makedepends=('git' 'rust' 'cmake' 'gcc' 'pkgconf' 'fcitx5')
+# SQLite comes from the system package (rusqlite without "bundled"): compiling
+# the 9 MB bundled sqlite3.c needs a lot of memory and crashed GCC on small
+# machines such as the Try Omarchy browser VM. LTO stays off: with GCC LTO
+# bytecode the Rust link step fails ("undefined symbol").
 options=('!lto')
 source=()
 sha256sums=()
 pkgver() { cd "$startdir"; printf '0.1.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"; }
 build() {
   cd "$startdir"
-  cargo build --release -p omarchy-ime
+  # About one compile job per 1.5 GB of free memory, so small machines don't run
+  # out of memory (the compiler gets killed); at least 1, at most the CPU count.
+  local mem_kb jobs
+  mem_kb=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+  # Inside a container or a cgroup-limited session the limit can be lower.
+  local cg; cg=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)
+  [[ $cg =~ ^[0-9]+$ ]] && (( cg / 1024 < mem_kb )) && mem_kb=$(( cg / 1024 ))
+  jobs=$(( ${mem_kb:-0} / 1500000 ))
+  (( jobs < 1 )) && jobs=1
+  (( jobs > $(nproc) )) && jobs=$(nproc)
+  echo "Building with $jobs parallel job(s)"
+  cargo build --release -p omarchy-ime -j "$jobs"
   cmake -S frontend/fcitx5 -B build/fcitx5 -DCMAKE_BUILD_TYPE=Release
   cmake --build build/fcitx5
 }

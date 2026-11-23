@@ -18,6 +18,29 @@ class PkgbuildTest(unittest.TestCase):
 
 
 
+class SystemSqliteTest(unittest.TestCase):
+    def test_sqlite_is_not_bundled(self):
+        # Compiling the bundled 9 MB sqlite3.c crashed GCC on small machines (Try
+        # Omarchy); link the system SQLite instead.
+        for toml in ROOT.glob("crates/*/Cargo.toml"):
+            text = toml.read_text()
+            if "rusqlite" in text:
+                self.assertNotIn("bundled", text, toml)
+        out = subprocess.run(
+            ["bash", "-c", 'source ./PKGBUILD && printf "%s\\n" "${depends[@]}"'],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        ).stdout.split()
+        self.assertIn("sqlite", out)
+
+    def test_build_jobs_follow_memory(self):
+        self.assertIn("MemAvailable", (ROOT / "PKGBUILD").read_text())
+
+    def test_installer_builds_on_disk(self):
+        # /tmp is RAM (tmpfs) on Omarchy.
+        text = (ROOT / "install.sh").read_text()
+        self.assertNotIn('mktemp -d "${TMPDIR:-/tmp}', text)
+
+
 class SonameTest(unittest.TestCase):
     def test_cdylib_declares_soname(self):
         # Without a SONAME the Fcitx5 front end records the library's absolute build

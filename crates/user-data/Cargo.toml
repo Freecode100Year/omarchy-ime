@@ -6,4 +6,4 @@ license.workspace = true
 
 [dependencies]
 pinyin = { path = "../pinyin" }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = "0.32"
