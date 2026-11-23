@@ -16,6 +16,8 @@ The installer fetches the source tree, installs `git` and `base-devel` if needed
 
 安装程序最后会自动运行 `omarchy-ime-enable`：重启 Omarchy 管理的 Fcitx5（`omarchy-fcitx5.service`），让它加载 Omarchy IME，再把「Omarchy 拼音」加进当前输入法列表。然后按 `Super + I` 切换输入法（Omarchy 的切换键；Omarchy 把 `Ctrl + Space` 留给终端，不用它切换输入法）。
 
+安装出错、找不到输入法、怎么加词，见《[安装故障排查与使用指南](docs/安装故障排查与使用指南.md)》。
+
 - Omarchy 菜单里的「Input Methods」只列出 Omarchy 自带的引擎（Mozc、Hangul、Pinyin 等），所以 Omarchy 拼音不会出现在那里，这是正常的
 - 加上五笔拼音混输：`omarchy-ime-enable --wubi`
 - 检查：`omarchy-ime-enable --status`（Fcitx5 是否加载了它、是否在输入法列表里）
@@ -32,7 +34,7 @@ exec-once = fcitx5 -d
 
 Fcitx5 provides a Wayland frontend by default. Avoid forcing `GTK_IM_MODULE`/`QT_IM_MODULE` globally for Wayland clients; set them per application only if that client needs an IM module. For Xwayland, add `env = XMODIFIERS,@im=fcitx`.
 
-`Ctrl+Space` toggles input. `theme-sync.py` generates an Fcitx5 Classic UI theme from `~/.config/omarchy/current/theme/colors.toml`; the installer registers it in Omarchy's `theme-set.d` hook. You can run it manually after changing the palette. `./uninstall.sh` removes the Arch package and retains user data; the user hook can be removed at `~/.config/omarchy/hooks/theme-set.d/50-omarchy-ime-theme`.
+Press `Super + I` to switch input methods (Omarchy keeps `Ctrl + Space` for the terminal). `theme-sync.py` generates an Fcitx5 Classic UI theme from `~/.config/omarchy/current/theme/colors.toml`; the installer registers it in Omarchy's `theme-set.d` hook. You can run it manually after changing the palette. `./uninstall.sh` removes the Arch package and retains user data; the user hook can be removed at `~/.config/omarchy/hooks/theme-set.d/50-omarchy-ime-theme`.
 
 ## Dictionary
 
